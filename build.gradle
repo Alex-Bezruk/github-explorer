@@ -14,8 +14,6 @@ dependencies {
     implementation 'io.quarkus:quarkus-resteasy-reactive-jackson'
     implementation 'io.quarkus:quarkus-arc'
 
-    implementation 'javax.ws.rs:javax.ws.rs-api:2.1.1'
-
     implementation 'com.squareup.okhttp3:okhttp:4.12.0'
 
     compileOnly 'org.projectlombok:lombok:1.18.30'
@@ -33,8 +31,8 @@ group 'com.bezruk.github.explorer'
 version '1.0.0-SNAPSHOT'
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_21
-    targetCompatibility = JavaVersion.VERSION_21
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
 }
 
 test {

@@ -16,8 +16,6 @@ import java.util.Collections;
 public class RepositoryResource {
 
     @GET
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Produces(MediaType.APPLICATION_JSON)
     public Response getRepositories(@QueryParam("userName") String userName) {
         if (userName == null || userName.trim().isEmpty()) {
             throw new BadRequestException("userName parameter is required");
