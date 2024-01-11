@@ -68,7 +68,7 @@ class GithubClientTest {
 
         List<Repository> actualRepositories = githubClient.fetchRepositories(userName);
         assertEquals(2, actualRepositories.size());
-        actualRepositories.forEach(repository -> assertNotNull(repository.getId()));
+        actualRepositories.forEach(repository -> assertNotNull(repository.getName()));
     }
 
     @Test

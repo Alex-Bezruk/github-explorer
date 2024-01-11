@@ -6,7 +6,8 @@ import com.github.tomakehurst.wiremock.client.WireMock;
 
 import java.util.List;
 
-import static com.github.tomakehurst.wiremock.client.WireMock.*;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlPathMatching;
 
 public class GitHubApiStub {
 
@@ -40,5 +41,16 @@ public class GitHubApiStub {
                             .withHeader("Content-Type", "application/json")
                             .withBody("[{\"name\":\"branch1\"}, {\"name\":\"branch2\"}]")));
         });
+    }
+
+    public void stubUserNotFound(String userName) {
+        String url = String.format("/users/%s/repos", userName);
+        wireMockServer.stubFor(WireMock.get(urlEqualTo(url))
+                .willReturn(WireMock.aResponse()
+                        .withStatus(404)));
+    }
+
+    public void reset() {
+        wireMockServer.resetAll();
     }
 }
