@@ -4,7 +4,7 @@
 AWS_REGION="eu-west-1"
 
 # Set your CloudFormation stack name
-STACK_NAME="GithubExplorer"
+STACK_NAME="GithubExplorerStack"
 
 # AWS CLI command to deploy the CloudFormation stack
 aws cloudformation create-stack \

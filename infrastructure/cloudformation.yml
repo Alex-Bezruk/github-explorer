@@ -1,4 +1,5 @@
 AWSTemplateFormatVersion: "2010-09-09"
+
 Parameters:
   ClusterName:
     Type: String
@@ -12,6 +13,7 @@ Parameters:
   ApiName:
     Type: String
     Default: "GithubExplorerGateway"
+
 Resources:
   GithubExplorerCluster:
     Type: AWS::ECS::Cluster
@@ -21,7 +23,7 @@ Resources:
   GithubExplorerTaskExecutionRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: !Sub "${ServiceName}ExecutionRole"
+      RoleName: "GithubExplorerTaskExecutionRole"
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:
@@ -29,6 +31,38 @@ Resources:
             Principal:
               Service: ecs-tasks.amazonaws.com
             Action: sts:AssumeRole
+      Policies:
+        - PolicyName: GithubExplorerTaskExecutionPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: "arn:aws:logs:*:*:*"
+              - Effect: Allow
+                Action:
+                  - ecs:RunTask
+                  - ecs:StopTask
+                  - ecs:DescribeTasks
+                Resource: "*"
+              - Effect: Allow
+                Action:
+                  - ecr:GetAuthorizationToken
+                  - ecr:BatchCheckLayerAvailability
+                  - ecr:GetDownloadUrlForLayer
+                  - ecr:BatchGetImage
+                  - ecr:InitiateLayerUpload
+                  - ecr:UploadLayerPart
+                  - ecr:CompleteLayerUpload
+                  - ecr:PutImage
+                Resource: "*"
+              - Effect: Allow
+                Action:
+                  - ecr:ListImages
+                Resource: "*"
 
   GithubExplorerTaskDefinition:
     Type: AWS::ECS::TaskDefinition
@@ -36,8 +70,8 @@ Resources:
       Family: !Ref ServiceName
       RequiresCompatibilities:
         - FARGATE
-      Cpu: "256"
-      Memory: "512"
+      Cpu: "1024"
+      Memory: "2048"
       NetworkMode: awsvpc
       ExecutionRoleArn: !GetAtt GithubExplorerTaskExecutionRole.Arn
       ContainerDefinitions:
@@ -58,7 +92,6 @@ Resources:
         AwsvpcConfiguration:
           Subnets:
             - "subnet-0267d83053065e5bc"
-            - "subnet-0981846c99e5b96af"
           SecurityGroups:
             - "sg-0032d83f986fcd307"
 
@@ -66,7 +99,7 @@ Resources:
     Type: AWS::ApiGateway::RestApi
     Properties:
       Name: !Ref ApiName
-      FailOnWarnings: "true"
+      FailOnWarnings: true
 
   GithubExplorerResource:
     Type: AWS::ApiGateway::Resource
@@ -74,11 +107,3 @@ Resources:
       ParentId: !GetAtt GithubExplorerApi.RootResourceId
       RestApiId: !Ref GithubExplorerApi
       PathPart: "repositories"
-
-  GithubExplorerGetMethod:
-    Type: AWS::ApiGateway::Method
-    Properties:
-      AuthorizationType: NONE
-      HttpMethod: GET
-      ResourceId: !Ref GithubExplorerResource
-      RestApiId: !Ref GithubExplorerApi
