@@ -6,6 +6,7 @@ import com.bezruk.github.explorer.model.Branch;
 import com.fasterxml.jackson.core.type.TypeReference;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.NonNull;
 import okhttp3.Call;
 import okhttp3.Response;
 
@@ -24,14 +25,14 @@ public class OnFetchBranchesCallback extends AbstractRequestCallback<String> {
     private final ApplicationObjectMapper mapper;
 
     @Override
-    public void onFailure(Call call, IOException e) {
+    public void onFailure(Call call, @NonNull IOException e) {
         callbacksCounter.countDown();
         String requestUrl = call.request().url().toString();
         logRequestFailure(requestUrl);
     }
 
     @Override
-    public void onResponse(Call call, Response response) {
+    public void onResponse(@NonNull Call call, Response response) {
         if (response.isSuccessful()) {
             var typeReference = new TypeReference<List<Branch>>() {};
             var branches = mapper.readResponse(response, typeReference);

@@ -1,15 +1,12 @@
 package com.bezruk.github.explorer.resource;
 
 import com.bezruk.github.explorer.exception.BadRequestException;
-import com.bezruk.github.explorer.model.Repository;
 import com.bezruk.github.explorer.service.RepositoryService;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.Response;
-
-import java.util.Collections;
 
 @Path("/repositories")
 public class RepositoryResource {

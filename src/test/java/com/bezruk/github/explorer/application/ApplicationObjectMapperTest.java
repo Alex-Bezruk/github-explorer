@@ -46,7 +46,7 @@ class ApplicationObjectMapperTest {
         String json = "[{\"key\":\"value\"}]";
         TestObject testObject = new TestObject("value");
 
-        TypeReference<TestObject> typeReference = new TypeReference<TestObject>() {
+        TypeReference<TestObject> typeReference = new TypeReference<>() {
         };
         when(mapper.readValue(json, typeReference)).thenReturn(testObject);
 
@@ -65,7 +65,7 @@ class ApplicationObjectMapperTest {
         when(response.body()).thenReturn(responseBody);
         when(responseBody.string()).thenReturn(json);
 
-        TypeReference<TestObject> typeReference = new TypeReference<TestObject>() {
+        TypeReference<TestObject> typeReference = new TypeReference<>() {
         };
         when(mapper.readValue(json, typeReference)).thenReturn(testObject);
 
@@ -114,11 +114,5 @@ class ApplicationObjectMapperTest {
         }
     }
 
-    private static class TestObject {
-        private String key;
-
-        public TestObject(String key) {
-            this.key = key;
-        }
-    }
+    private record TestObject(String key) { }
 }

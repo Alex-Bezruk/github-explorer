@@ -3,26 +3,18 @@ package com.bezruk.github.explorer.service;
 import com.bezruk.github.explorer.client.GithubClient;
 import com.bezruk.github.explorer.model.Branch;
 import com.bezruk.github.explorer.model.Commit;
-import com.bezruk.github.explorer.model.Owner;
 import com.bezruk.github.explorer.model.Repository;
-import io.quarkus.test.InjectMock;
-import io.quarkus.test.junit.QuarkusTest;
-
-import jakarta.inject.Inject;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
-
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class RepositoryServiceTest {

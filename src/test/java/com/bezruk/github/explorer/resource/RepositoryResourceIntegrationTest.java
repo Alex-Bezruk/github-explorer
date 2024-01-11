@@ -3,13 +3,9 @@ package com.bezruk.github.explorer.resource;
 import com.bezruk.github.explorer.model.Branch;
 import com.bezruk.github.explorer.model.Repository;
 import com.bezruk.github.explorer.stub.GitHubApiStub;
-import com.github.tomakehurst.wiremock.WireMockServer;
-import io.quarkus.test.junit.QuarkusIntegrationTest;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.common.mapper.TypeRef;
 import io.restassured.http.ContentType;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;

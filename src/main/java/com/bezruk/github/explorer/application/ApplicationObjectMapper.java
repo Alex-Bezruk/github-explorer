@@ -4,7 +4,6 @@ import com.bezruk.github.explorer.exception.InternalErrorException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.netty.util.internal.StringUtil;
 import lombok.RequiredArgsConstructor;
 import okhttp3.Response;
 import okhttp3.ResponseBody;
