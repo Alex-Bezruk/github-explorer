@@ -1,10 +1,7 @@
 package com.bezruk.github.explorer.model;
 
-import lombok.Data;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
-@Data
-public class Owner {
-    private String login;
-    private Long id;
-    private String url;
+@JsonIgnoreProperties(ignoreUnknown = true)
+public record Owner(String login, Long id, String url) {
 }

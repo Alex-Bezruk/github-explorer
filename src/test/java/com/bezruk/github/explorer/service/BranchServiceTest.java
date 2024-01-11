@@ -3,38 +3,26 @@ package com.bezruk.github.explorer.service;
 import com.bezruk.github.explorer.client.GithubClient;
 import com.bezruk.github.explorer.model.Branch;
 import com.bezruk.github.explorer.model.Commit;
-import com.bezruk.github.explorer.model.Owner;
-import com.bezruk.github.explorer.model.Repository;
-import io.quarkus.test.InjectMock;
-import io.quarkus.test.junit.QuarkusTest;
-
-import jakarta.inject.Inject;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
-
-import java.util.Collections;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class RepositoryServiceTest {
+class BranchServiceTest {
 
     @Mock
-    GithubClient githubClient;
-
-    @Mock
-    BranchService branchService;
+    private GithubClient githubClient;
 
     @InjectMocks
-    RepositoryService repositoryService;
+    private BranchService branchService;
 
     @BeforeEach
     void setUp() {
@@ -42,13 +30,9 @@ public class RepositoryServiceTest {
     }
 
     @Test
-    void testGetRepositories() {
+    void getBranches_shouldReturnMappedBranches() {
         String userName = "testUser";
-        Repository repository = new Repository();
-        repository.setName("test");
-        List<Repository> mockRepositories = Collections.singletonList(repository);
-
-        when(githubClient.fetchRepositories(userName)).thenReturn(mockRepositories);
+        List<String> repositoryNames = Arrays.asList("repo1", "repo2");
 
         Branch branch = new Branch("branch1", new Commit("sha1"));
         Branch branch2 = new Branch("branch2", new Commit("sha2"));
@@ -57,11 +41,12 @@ public class RepositoryServiceTest {
         List<Branch> branchList1 = List.of(branch, branch2);
         List<Branch> branchList2 = List.of(branch3, branch4);
 
-        when(branchService.getBranches(userName, List.of("test")))
+        when(githubClient.fetchBranches(userName, repositoryNames))
                 .thenReturn(Map.of("repo1", branchList1, "repo2", branchList2));
 
-        List<Repository> result = repositoryService.getRepositories(userName);
+        Map<String, List<Branch>> result = branchService.getBranches(userName, repositoryNames);
 
-        assertEquals(mockRepositories, result);
+        assertEquals(branchList1, result.get("repo1"));
+        assertEquals(branchList2, result.get("repo2"));
     }
 }

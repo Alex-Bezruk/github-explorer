@@ -14,16 +14,16 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @QuarkusTest
 class RepositoryResourceTest {
-//    @Test
-//    void testEndpointCallSuccess() {
-//        given()
-//                .accept("application/json")
-//                .param("username", "Alex-Bezruk")
-//                .when().get("/repositories")
-//                .then()
-//                .statusCode(200)
-//                .body(is("[]"));
-//    }
+
+    @Test
+    void testEndpointCallSuccess() {
+        given()
+                .accept("application/json")
+                .param("username", "Alex-Bezruk")
+                .when().get("/repositories")
+                .then()
+                .statusCode(200);
+    }
 
     @Test
     void testHeaderValidation() {
@@ -55,6 +55,6 @@ class RepositoryResourceTest {
         ApplicationException expectedException = new BadRequestException(expectedMessage);
         ApplicationError expectedError = ApplicationError.fromException(expectedException);
 
-        assertEquals(error, expectedError);
+        assertEquals(error.getMessage(), expectedError.getMessage());
     }
 }

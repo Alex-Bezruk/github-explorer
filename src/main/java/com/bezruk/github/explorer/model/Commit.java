@@ -1,8 +1,7 @@
 package com.bezruk.github.explorer.model;
 
-import lombok.Data;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
-@Data
-class Commit {
-    private String sha;
-}
+@JsonIgnoreProperties(ignoreUnknown = true)
+public record Commit (String sha) { }
+

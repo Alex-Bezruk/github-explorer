@@ -7,12 +7,13 @@ import jakarta.ws.rs.ext.Provider;
 
 import java.util.List;
 
-import static jakarta.ws.rs.core.MediaType.*;
+import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
+import static jakarta.ws.rs.core.MediaType.WILDCARD;
 
 @Provider
 public class RepositoryResourceInterceptor implements ContainerRequestFilter {
 
-    private static final List<String> acceptableMediaTypes = List.of(APPLICATION_JSON, MEDIA_TYPE_WILDCARD);
+    private static final List<String> acceptableMediaTypes = List.of(APPLICATION_JSON, WILDCARD);
 
     @Override
     public void filter(ContainerRequestContext requestContext) {

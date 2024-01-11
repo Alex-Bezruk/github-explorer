@@ -1,9 +1,6 @@
 package com.bezruk.github.explorer.model;
 
-import lombok.Data;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
-@Data
-public class Branch {
-    private String name;
-    private Commit commit;
-}
+@JsonIgnoreProperties(ignoreUnknown = true)
+public record Branch(String name, Commit commit) { }
