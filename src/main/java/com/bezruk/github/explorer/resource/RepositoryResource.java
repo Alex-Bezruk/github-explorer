@@ -7,6 +7,7 @@ import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.Response;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 
 @Path("/repositories")
 public class RepositoryResource {
@@ -18,7 +19,14 @@ public class RepositoryResource {
         this.service = service;
     }
     @GET
-    public Response getRepositories(@QueryParam("userName") String userName) {
+    public Response getRepositories(
+            @Parameter(
+                    name = "userName",
+                    description = "The user name for which repositories are to be retrieved",
+                    required = true,
+                    example = "john_doe"
+            )
+            @QueryParam("userName") String userName) {
         if (userName == null || userName.trim().isEmpty()) {
             throw new BadRequestException("userName parameter is required");
         }
