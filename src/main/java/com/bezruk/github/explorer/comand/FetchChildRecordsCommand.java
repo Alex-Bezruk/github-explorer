@@ -27,7 +27,7 @@ public abstract class FetchChildRecordsCommand<ID, T> implements CallbackAware<I
     }
 
     public Map<ID, T> execute() {
-        calls.stream().forEach(call -> {
+        calls.forEach(call -> {
             var callback = buildCallback(call.parentRecordId(), resultStore, callbackCounter);
             call.asyncCall().enqueue(callback);
         });

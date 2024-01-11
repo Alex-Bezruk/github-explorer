@@ -50,9 +50,9 @@ public class RepositoryResourceIntegrationTest {
 
         assertEquals(expectedBranches, actualBranches);
 
-        actualRepositories.forEach(repository -> {
-            assertTrue(repositories.contains(repository.getName()));
-        });
+        actualRepositories.stream()
+                .map(Repository::getName)
+                .forEach(name -> assertTrue(repositories.contains(name)));
 
         apiStub.stopWireMock();
     }
