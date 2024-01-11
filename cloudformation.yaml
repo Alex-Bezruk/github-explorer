@@ -1,0 +1,67 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Parameters:
+  ClusterName:
+    Type: String
+    Default: "GithubExplorerCluster"
+  ServiceName:
+    Type: String
+    Default: "GithubExplorerService"
+  ImageUrl:
+    Type: String
+    Default: "your-ecr-repo-url/github-explorer:latest"
+  ApiName:
+    Type: String
+    Default: "GithubExplorerGateway"
+Resources:
+  GithubExplorerCluster:
+    Type: AWS::ECS::Cluster
+    Properties:
+      ClusterName: !Ref ClusterName
+
+  GithubExplorerTaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Family: !Ref ServiceName
+      ContainerDefinitions:
+        - Name: github-explorer-container
+          Image: !Ref ImageUrl
+          Essential: true
+          PortMappings:
+            - ContainerPort: 8080
+
+  GithubExplorerService:
+    Type: AWS::ECS::Service
+    Properties:
+      Cluster: !Ref GithubExplorerCluster
+      ServiceName: !Ref ServiceName
+      TaskDefinition: !Ref GithubExplorerTaskDefinition
+      LaunchType: FARGATE
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          Subnets:
+            - "subnet-xxxxxx"
+            - "subnet-yyyyyy"
+          SecurityGroups:
+            - "sg-xxxxxx"
+            - "sg-yyyyyy"
+
+  GithubExplorerApi:
+    Type: AWS::ApiGateway::RestApi
+    Properties:
+      Name: !Ref ApiName
+      FailOnWarnings: "true"
+
+  GithubExplorerResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      ParentId: !GetAtt GithubExplorerApi.RootResourceId
+      RestApiId: !Ref GithubExplorerApi
+      PathPart: "repositories"
+
+  GithubExplorerGetMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      AuthorizationType: NONE
+      HttpMethod: GET
+      ResourceId: !Ref GithubExplorerResource
+      RestApiId: !Ref GithubExplorerApi
