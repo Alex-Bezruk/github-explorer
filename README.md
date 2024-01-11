@@ -39,3 +39,16 @@ No specific configuration is required for this project.
 ### Usage
 To retrieve GitHub repositories, make a GET request to http://localhost:8080/repositories?userName=<github_username>. Replace <github_username> with the desired GitHub username.
 
+## Deployment
+
+### Prerequisites
+Make sure you have Docker installed
+Make sure you have ECR repository created
+
+### Instruction
+1. Build docker image: docker build -t <ecr-repository-uri>:<version-of-application>
+2. Authorize ECR through AWS CLI: aws ecr get-login-password --region eu-west-1 | docker login --username AWS --password-stdin <ecr-repository-uri>
+3. Push image to repository: docker push <ecr-repository-uri>:<version-of-application>
+4. 
+
+
