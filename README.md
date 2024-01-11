@@ -1,56 +1,41 @@
-# github-explorer
+# Quarkus GitHub Explorer
 
-This project uses Quarkus, the Supersonic Subatomic Java Framework.
+Quarkus application to explore GitHub repositories based on a user's name.
 
-If you want to learn more about Quarkus, please visit its website: https://quarkus.io/ .
+## Overview
 
-## Running the application in dev mode
+This Quarkus application provides a simple API endpoint to retrieve GitHub repositories based on a user's name.
 
-You can run your application in dev mode that enables live coding using:
-```shell script
-./gradlew quarkusDev
-```
+## Getting Started
 
-> **_NOTE:_**  Quarkus now ships with a Dev UI, which is available in dev mode only at http://localhost:8080/q/dev/.
+### Prerequisites
 
-## Packaging and running the application
+Make sure you have the following installed:
 
-The application can be packaged using:
-```shell script
+- Java Development Kit (JDK) 17 or later
+- Gradle
+
+### Installation
+
+Clone the repository and build the project using Gradle:
+
+```bash
+git clone https://github.com/Alex-Bezruk/quarkus-github-explorer.git
+cd quarkus-github-explorer
 ./gradlew build
 ```
-It produces the `quarkus-run.jar` file in the `build/quarkus-app/` directory.
-Be aware that it’s not an _über-jar_ as the dependencies are copied into the `build/quarkus-app/lib/` directory.
 
-The application is now runnable using `java -jar build/quarkus-app/quarkus-run.jar`.
+### Running the Application
 
-If you want to build an _über-jar_, execute the following command:
-```shell script
-./gradlew build -Dquarkus.package.type=uber-jar
-```
+./gradlew quarkusDev
 
-The application, packaged as an _über-jar_, is now runnable using `java -jar build/*-runner.jar`.
+### API Documentation
 
-## Creating a native executable
+The API documentation is generated automatically by Quarkus. Access it at http://localhost:8080/q/swagger-ui/.
 
-You can create a native executable using: 
-```shell script
-./gradlew build -Dquarkus.package.type=native
-```
+### Configuration
+No specific configuration is required for this project.
 
-Or, if you don't have GraalVM installed, you can run the native executable build in a container using: 
-```shell script
-./gradlew build -Dquarkus.package.type=native -Dquarkus.native.container-build=true
-```
+### Usage
+To retrieve GitHub repositories, make a GET request to http://localhost:8080/repositories?userName=<github_username>. Replace <github_username> with the desired GitHub username.
 
-You can then execute your native executable with: `./build/github-explorer-1.0.0-SNAPSHOT-runner`
-
-If you want to learn more about building native executables, please consult https://quarkus.io/guides/gradle-tooling.
-
-## Provided Code
-
-### RESTEasy Reactive
-
-Easily start your Reactive RESTful Web Services
-
-[Related guide section...](https://quarkus.io/guides/getting-started-reactive#reactive-jax-rs-resources)
