@@ -22,10 +22,10 @@ Resources:
         LoadBalancer Security Group
       SecurityGroupIngress:
         - CidrIp: 0.0.0.0/0
-          Description: Allow from anyone on port 8080
-          Port: 8080
+          Description: Allow from anyone on port 80
+          FromPort: 80
           IpProtocol: tcp
-          ToPort: 8080
+          ToPort: 80
       VpcId: !Ref VpcId
   # Load balancer security group egress rule to ECS cluster security group.
   LoadBalancerSGEgressToECSSecurityGroup:
@@ -39,7 +39,7 @@ Resources:
       DestinationSecurityGroupId: !GetAtt
         - ECSSecurityGroup
         - GroupId
-      Port: 8080
+      FromPort: 8080
       ToPort: 8080
   # ECS cluster security group.
   ECSSecurityGroup:
@@ -58,7 +58,7 @@ Resources:
     Properties:
       IpProtocol: tcp
       Description: Ingress from Load Balancer
-      Port: 8080
+      FromPort: 80
       GroupId: !GetAtt
         - ECSSecurityGroup
         - GroupId
@@ -93,7 +93,7 @@ Resources:
         - TargetGroupArn: !Ref LoadBalancerListenerTargetGroupECS
           Type: forward
       LoadBalancerArn: !Ref LoadBalancer
-      Port: 8080
+      Port: 80
       Protocol: HTTP
   # Create the ECS Cluster and Fargate launch type service in the private subnets
   ECSFargateCluster:
