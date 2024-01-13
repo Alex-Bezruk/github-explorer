@@ -82,6 +82,7 @@ Resources:
     Type: 'AWS::ElasticLoadBalancingV2::TargetGroup'
     Properties:
       Port: 8080
+      HealthCheckPath: '/q/health'
       Protocol: HTTP
       TargetType: ip
       VpcId: !Ref VpcId
