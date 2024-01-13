@@ -1,6 +1,5 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
-Description: Serverless patterns - API Gateway to Private HTTP Endpoint via VPC Link
 
 # Parameters to input VPC id and private subnet ids where the ECS cluster and Application Load Balancer will be created.
 Parameters:
@@ -10,6 +9,9 @@ Parameters:
   PrivateSubnetIds:
     Type: List<AWS::EC2::Subnet::Id>
     Default: "subnet-0f2e5b899a7a5ffc7, subnet-095bd6e0369f07cd6"
+  ECRRepositoryUri:
+    Type: String
+    Default: "654654420040.dkr.ecr.eu-west-1.amazonaws.com/bezruk"
 
 Resources:
   # Load balancer security group. CIDR and port ingress can be changed as required.
@@ -20,10 +22,10 @@ Resources:
         LoadBalancer Security Group
       SecurityGroupIngress:
         - CidrIp: 0.0.0.0/0
-          Description: Allow from anyone on port 80
-          FromPort: 80
+          Description: Allow from anyone on port 8080
+          Port: 8080
           IpProtocol: tcp
-          ToPort: 80
+          ToPort: 8080
       VpcId: !Ref VpcId
   # Load balancer security group egress rule to ECS cluster security group.
   LoadBalancerSGEgressToECSSecurityGroup:
@@ -37,8 +39,8 @@ Resources:
       DestinationSecurityGroupId: !GetAtt
         - ECSSecurityGroup
         - GroupId
-      FromPort: 80
-      ToPort: 80
+      Port: 8080
+      ToPort: 8080
   # ECS cluster security group.
   ECSSecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
@@ -56,14 +58,14 @@ Resources:
     Properties:
       IpProtocol: tcp
       Description: Ingress from Load Balancer
-      FromPort: 80
+      Port: 8080
       GroupId: !GetAtt
         - ECSSecurityGroup
         - GroupId
       SourceSecurityGroupId: !GetAtt
         - LoadBalancerSG
         - GroupId
-      ToPort: 80
+      ToPort: 8080
   # Create the internal application load balancer (ALB) in the private subnets.
   LoadBalancer:
     Type: 'AWS::ElasticLoadBalancingV2::LoadBalancer'
@@ -79,7 +81,7 @@ Resources:
   LoadBalancerListenerTargetGroupECS:
     Type: 'AWS::ElasticLoadBalancingV2::TargetGroup'
     Properties:
-      Port: 80
+      Port: 8080
       Protocol: HTTP
       TargetType: ip
       VpcId: !Ref VpcId
@@ -91,7 +93,7 @@ Resources:
         - TargetGroupArn: !Ref LoadBalancerListenerTargetGroupECS
           Type: forward
       LoadBalancerArn: !Ref LoadBalancer
-      Port: 80
+      Port: 8080
       Protocol: HTTP
   # Create the ECS Cluster and Fargate launch type service in the private subnets
   ECSFargateCluster:
@@ -103,13 +105,13 @@ Resources:
       DeploymentConfiguration:
         MaximumPercent: 200
         MinimumHealthyPercent: 50
-      DesiredCount: 2
+      DesiredCount: 1
       EnableECSManagedTags: false
       HealthCheckGracePeriodSeconds: 60
       LaunchType: FARGATE
       LoadBalancers:
         - ContainerName: web
-          ContainerPort: 80
+          ContainerPort: 8080
           TargetGroupArn: !Ref LoadBalancerListenerTargetGroupECS
       NetworkConfiguration:
         AwsvpcConfiguration:
@@ -123,6 +125,18 @@ Resources:
     DependsOn:
       - LoadBalancerListenerTargetGroupECS
       - LoadBalancerListener
+
+  LogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: "github-explorer"
+
+  LogStream:
+    Type: AWS::Logs::LogStream
+    Properties:
+      LogGroupName: !Ref LogGroup
+      LogStreamName: "github-explorer"
+
   # Create the ECS Service task definition.
   # 'nginx' image is being used in the container definition.
   # This image is pulled from the docker hub which is the default image repository.
@@ -132,11 +146,17 @@ Resources:
     Properties:
       ContainerDefinitions:
         - Essential: true
-          Image: nginx
+          Image: !Sub ${ECRRepositoryUri}:github-explorer
           Name: web
           PortMappings:
-            - ContainerPort: 80
+            - ContainerPort: 8080
               Protocol: tcp
+          LogConfiguration:
+            LogDriver: "awslogs"
+            Options:
+              awslogs-group: !Ref LogGroup
+              awslogs-region: "eu-west-1"
+              awslogs-stream-prefix: "github-explorer"
       Cpu: '512'
       ExecutionRoleArn: !GetAtt
         - ECSTaskExecutionRole
@@ -158,6 +178,32 @@ Resources:
             Principal:
               Service: ecs-tasks.amazonaws.com
         Version: 2012-10-17
+      Policies:
+        - PolicyName: ECRPullAndRunPolicy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'ecr:GetAuthorizationToken'
+                  - 'ecr:BatchCheckLayerAvailability'
+                  - 'ecr:BatchGetImage'
+                  - 'ecr:InitiateLayerUpload'
+                  - 'ecr:UploadLayerPart'
+                  - 'ecr:CompleteLayerUpload'
+                  - 'ecr:GetDownloadUrlForLayer'
+                Resource: '*'
+        - PolicyName: CloudWatchLogsPolicy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'logs:CreateLogGroup'
+                  - 'logs:CreateLogStream'
+                  - 'logs:PutLogEvents'
+                Resource: '*'
+
   ECSTaskRole:
     Type: 'AWS::IAM::Role'
     Properties:
@@ -179,7 +225,7 @@ Resources:
   APIGWHTTPEndpoint:
     Type: 'AWS::ApiGatewayV2::Api'
     Properties:
-      Name: serverlessland-pvt-endpoint
+      Name: github-explorer-api-endpoint
       ProtocolType: HTTP
   # Create the API Gateway HTTP_PROXY integration between the created API and the private load balancer via the VPC Link.
   # Ensure that the 'DependsOn' attribute has the VPC Link dependency.
