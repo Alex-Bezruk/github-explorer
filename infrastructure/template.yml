@@ -250,7 +250,7 @@ Resources:
     Type: 'AWS::ApiGatewayV2::Route'
     Properties:
       ApiId: !Ref APIGWHTTPEndpoint
-      RouteKey: 'ANY /{proxy+}'
+      RouteKey: '/repositories'
       Target: !Join
         - /
         - - integrations
