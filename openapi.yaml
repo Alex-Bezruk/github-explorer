@@ -21,7 +21,7 @@ paths:
           content:
             application/json:
               example:
-                - $ref: '#/components/schemas/GitHubRepository'
+                - $ref: '#/components/schemas/Repository'
         "400":
           description: Bad Request
           content:
@@ -47,7 +47,7 @@ paths:
 
 components:
   schemas:
-    GitHubRepository:
+    Repository:
       type: object
       properties:
         id:
@@ -57,7 +57,7 @@ components:
           type: string
           example: github-explorer
         owner:
-          $ref: '#/components/schemas/GitHubUser'
+          $ref: '#/components/schemas/Owner'
         branches:
           type: array
           items:
@@ -66,7 +66,7 @@ components:
           type: boolean
           example: false
 
-    GitHubUser:
+    Owner:
       type: object
       properties:
         login:
