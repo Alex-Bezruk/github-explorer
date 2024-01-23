@@ -1,35 +1,33 @@
 package com.bezruk.github.explorer.service;
 
 import com.bezruk.github.explorer.client.GithubClient;
-import com.bezruk.github.explorer.model.Branch;
+import com.bezruk.github.explorer.exception.BadRequestException;
 import com.bezruk.github.explorer.model.Repository;
-import jakarta.enterprise.context.ApplicationScoped;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.stereotype.Service;
+import reactor.core.publisher.Flux;
 
-import java.util.List;
-import java.util.Map;
+import static java.util.function.Predicate.not;
 
-@ApplicationScoped
+@Service
 @RequiredArgsConstructor
 public class RepositoryService {
 
     private final GithubClient githubClient;
-    private final BranchService branchService;
 
-    public List<Repository> getRepositories(String userName) {
-        List<Repository> repositories = githubClient.fetchRepositories(userName);
+    public Flux<Repository> getRepositories(String userName) {
+        validateUserName(userName);
 
-        List<String> repositoryNames = repositories.stream().map(Repository::getName).toList();
-        Map<String, List<Branch>> repositoryToBranches = branchService.getBranches(userName, repositoryNames);
-
-        return repositories.stream()
-                .map(repository -> toEnhancedWithBranches(repository, repositoryToBranches))
-                .toList();
+        return githubClient.fetchRepositories(userName)
+                .flatMapMany(Flux::fromIterable)
+                .filter(not(Repository::getFork))
+                .flatMap(githubClient::fetchBranchesFor);
     }
 
-    private Repository toEnhancedWithBranches(Repository repository, Map<String, List<Branch>> idToBranches) {
-        List<Branch> branches = idToBranches.get(repository.getName());
-        repository.setBranches(branches);
-        return repository;
+    private void validateUserName(String userName) {
+        if (StringUtils.isBlank(userName)) {
+            throw new BadRequestException("Required parameter missed: userName");
+        }
     }
 }

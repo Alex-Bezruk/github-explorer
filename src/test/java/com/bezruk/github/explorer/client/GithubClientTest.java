@@ -1,153 +1,144 @@
 package com.bezruk.github.explorer.client;
 
-
-import com.bezruk.github.explorer.application.ApplicationObjectMapper;
-import com.bezruk.github.explorer.callback.OnFetchBranchesCallback;
-import com.bezruk.github.explorer.exception.AsyncFetchFailedException;
-import com.bezruk.github.explorer.exception.GithubRequestException;
-import com.bezruk.github.explorer.exception.InternalErrorException;
+import com.bezruk.github.explorer.exception.NotFoundException;
 import com.bezruk.github.explorer.model.Branch;
+import com.bezruk.github.explorer.model.Commit;
+import com.bezruk.github.explorer.model.Owner;
 import com.bezruk.github.explorer.model.Repository;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.SneakyThrows;
-import okhttp3.*;
-import org.apache.commons.lang3.RandomStringUtils;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.*;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Mono;
+import reactor.test.StepVerifier;
 
-import java.io.IOException;
-import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 class GithubClientTest {
 
-    @Mock(answer = Answers.RETURNS_DEEP_STUBS)
-    private OkHttpClient httpClient;
+    @Test
+    void whenUserWithProvidedNameExistsShouldFetchRepositoriesSuccessfully() {
+        String userName = "Alex-Bezruk-Bezruk-333";
+        String uri = "/users/{userName}/repos";
+        WebClient webClientMock = mock(WebClient.class, RETURNS_DEEP_STUBS);
 
-    @InjectMocks
-    private GithubClient githubClient;
 
-    @BeforeEach
-    void setUp() {
-        MockitoAnnotations.openMocks(this);
-        String testUrl = String.format("https://%s", RandomStringUtils.randomAlphabetic(10));
-        githubClient = new GithubClient(httpClient, testUrl, new ApplicationObjectMapper(new ObjectMapper()));
-    }
+        Repository repository = new Repository();
+        repository.setName("repo");
+        Repository repository1 = new Repository();
+        repository1.setName("repo1");
+        ResponseEntity<List<Repository>> responseEntity = ResponseEntity.ok()
+                .body(List.of(repository, repository1));
 
-    @SneakyThrows
-    private void mockSuccessfulRepositoriesResponse(Response response) {
-        String randomNumeric = RandomStringUtils.randomNumeric(15);
-        String anotherRandomNumeric = RandomStringUtils.randomNumeric(15);
-        String json = String.format("[{\"name\":\"%s\"}, {\"name\":\"%s\"}]", randomNumeric, anotherRandomNumeric);
-        when(response.body().string()).thenReturn(json);
-        when(response.isSuccessful()).thenReturn(true);
-    }
+        when(webClientMock
+                .get()
+                .uri(eq(uri), eq(userName))
+                .retrieve()
+                .onStatus(any(), any())
+                .toEntityList(Repository.class)
+        ).thenReturn(Mono.just(responseEntity));
 
-    @SneakyThrows
-    private void mockSuccessfulBranchesResponse(Response response) {
-        String randomNumeric = RandomStringUtils.randomNumeric(15);
-        String anotherRandomNumeric = RandomStringUtils.randomNumeric(15);
-        String json = String.format("[{\"name\":\"%s\"}, {\"name\":\"%s\"}]", randomNumeric, anotherRandomNumeric);
-        when(response.body().string()).thenReturn(json);
-        when(response.isSuccessful()).thenReturn(true);
+        String baseUrl = "https://api.github.com";
+        WebClient.Builder webClientBuilder = mock(WebClient.Builder.class, RETURNS_DEEP_STUBS);
+        when(webClientBuilder.baseUrl(baseUrl).build()).thenReturn(webClientMock);
+        GithubClient githubClient = new GithubClient(webClientBuilder, baseUrl);
+
+        Mono<List<Repository>> result = githubClient.fetchRepositories(userName);
+
+        Set<String> repositoryNames = Set.of("repo", "repo1");
+        StepVerifier.create(result)
+                .expectNextMatches(repos -> {
+                    Set<String> actualRepoNames = repos.stream().map(Repository::getName).collect(Collectors.toSet());
+                    return repositoryNames.containsAll(actualRepoNames);
+                })
+                .verifyComplete();
     }
 
     @Test
-    void fetchRepositories_shouldFetchRepositoriesSuccessfully() throws IOException {
-        String userName = "testUser";
+    void whenUserWithProvidedNameDoesNotExistsShouldRespondWith404Status() {
+        String userName = "NonExistentUser";
+        WebClient webClientMock = mock(WebClient.class, RETURNS_DEEP_STUBS);
 
-        Response response = mock(Response.class, RETURNS_DEEP_STUBS);
-        mockSuccessfulRepositoriesResponse(response);
-        when(httpClient.newCall(any(Request.class)).execute()).thenReturn(response);
+        when(webClientMock
+                .get()
+                .uri(eq("/users/{userName}/repos"), eq(userName))
+                .retrieve()
+                .onStatus(any(), any())
+                .toEntityList(Repository.class)
+        ).thenReturn(Mono.error(() -> new NotFoundException("404 Not Found")));
 
-        List<Repository> actualRepositories = githubClient.fetchRepositories(userName);
-        assertEquals(2, actualRepositories.size());
-        actualRepositories.forEach(repository -> assertNotNull(repository.getName()));
+        String baseUrl = "https://api.github.com";
+        WebClient.Builder webClientBuilder = mock(WebClient.Builder.class, RETURNS_DEEP_STUBS);
+        when(webClientBuilder.baseUrl(baseUrl).build()).thenReturn(webClientMock);
+        GithubClient githubClient = new GithubClient(webClientBuilder, baseUrl);
+
+        Mono<List<Repository>> result = githubClient.fetchRepositories(userName);
+
+        StepVerifier.create(result)
+                .verifyError(NotFoundException.class);
     }
 
     @Test
-    void fetchRepositories_shouldThrowExceptionOnUnsuccessfulResponse() throws IOException {
-        String userName = "testUser";
+    void whenUserAndRepositoryExistsShouldFetchBranchesSuccessfully() {
+        Repository repository = new Repository();
+        repository.setOwner(new Owner("user", 1L, ""));
+        repository.setName("repo");
 
-        Response response = mock(Response.class, RETURNS_DEEP_STUBS);
-        when(httpClient.newCall(any(Request.class)).execute()).thenReturn(response);
-        when(response.isSuccessful()).thenReturn(false);
-        when(response.request()).thenReturn(new Request.Builder().url("https://api.github.com").build());
+        WebClient webClientMock = mock(WebClient.class, RETURNS_DEEP_STUBS);
 
-        assertThrows(GithubRequestException.class, () -> githubClient.fetchRepositories(userName));
+        Branch branch1 = new Branch("main", new Commit(""));
+        Branch branch2 = new Branch("feature-branch", new Commit(""));
+        ResponseEntity<List<Branch>> responseEntity = ResponseEntity.ok()
+                .body(List.of(branch1, branch2));
+
+        when(webClientMock
+                .get()
+                .uri("/repos/{userName}/{repositoryName}/branches", "user", "repo")
+                .retrieve()
+                .onStatus(any(), any())
+                .toEntityList(Branch.class)
+        ).thenReturn(Mono.just(responseEntity));
+
+        String baseUrl = "https://api.github.com";
+        WebClient.Builder webClientBuilder = mock(WebClient.Builder.class, RETURNS_DEEP_STUBS);
+        when(webClientBuilder.baseUrl(baseUrl).build()).thenReturn(webClientMock);
+        GithubClient githubClient = new GithubClient(webClientBuilder, baseUrl);
+
+        Mono<Repository> result = githubClient.fetchBranchesFor(repository);
+
+        StepVerifier.create(result)
+                .expectNextMatches(repo -> repo.getBranches().size() == 2)
+                .verifyComplete();
     }
 
     @Test
-    void fetchRepositories_shouldThrowExceptionOnNotValidUrl() {
-        String userName = "testUser";
+    void whenRepositoryNotExistsShouldRespondWith404Status() {
+        Repository repository = new Repository();
+        repository.setOwner(new Owner("user", 1L, ""));
+        repository.setName("nonExistentRepo");
 
-        githubClient = new GithubClient(httpClient, "wrong_url", new ApplicationObjectMapper(new ObjectMapper()));
-        assertThrows(InternalErrorException.class, () -> githubClient.fetchRepositories(userName));
-    }
+        WebClient webClientMock = mock(WebClient.class, RETURNS_DEEP_STUBS);
 
-    @Test
-    void fetchBranches_shouldFetchBranchesSuccessFully() throws IOException {
-        Response response = mock(Response.class, RETURNS_DEEP_STUBS);
-        mockSuccessfulBranchesResponse(response);
+        when(webClientMock
+                .get()
+                .uri("/repos/{userName}/{repositoryName}/branches", "user", "nonExistentRepo")
+                .retrieve()
+                .onStatus(any(), any())
+                .toEntityList(Branch.class)
+        ).thenReturn(Mono.error(() -> new NotFoundException("404 Not Found")));
 
-        Call mockedCall = mock(Call.class);
-        when(mockedCall.execute()).thenReturn(response);
-        when(httpClient.newCall(any(Request.class))).thenReturn(mockedCall);
-        doAnswer(invocationOnMock -> {
-            OnFetchBranchesCallback callback = invocationOnMock.getArgument(0);
-            callback.getCallbacksCounter().countDown();
-            callback.getResultStore().put(callback.getParentRecordId(), Collections.emptyList());
-            return null;
-        }).when(mockedCall).enqueue(any());
+        String baseUrl = "https://api.github.com";
+        WebClient.Builder webClientBuilder = mock(WebClient.Builder.class, RETURNS_DEEP_STUBS);
+        when(webClientBuilder.baseUrl(baseUrl).build()).thenReturn(webClientMock);
+        GithubClient githubClient = new GithubClient(webClientBuilder, baseUrl);
 
-        String userName = "testUser";
-        Map<String, List<Branch>> branches = githubClient.fetchBranches(userName, List.of("Repo1", "Repo2"));
+        Mono<Repository> result = githubClient.fetchBranchesFor(repository);
 
-        assertEquals(branches.keySet(), Set.of("Repo1", "Repo2"));
-    }
-
-    @Test
-    void fetchBranches_shouldThrowExceptionBranchesRequestFailure() throws IOException {
-        Response response = mock(Response.class, RETURNS_DEEP_STUBS);
-        mockSuccessfulBranchesResponse(response);
-
-        Call mockedCall = mock(Call.class);
-        when(mockedCall.execute()).thenReturn(response);
-        when(httpClient.newCall(any(Request.class))).thenReturn(mockedCall);
-        doAnswer(invocationOnMock -> {
-            OnFetchBranchesCallback callback = invocationOnMock.getArgument(0);
-            callback.getCallbacksCounter().countDown();
-            return null;
-        }).when(mockedCall).enqueue(any());
-
-        String userName = "testUser";
-
-        assertThrows(AsyncFetchFailedException.class,
-                () -> githubClient.fetchBranches(userName, List.of("Repo1", "Repo2")));
-    }
-
-    @Test
-    void fetchBranches_shouldThrowExceptionBranchesThreadInterruption() throws IOException {
-        Response response = mock(Response.class, RETURNS_DEEP_STUBS);
-        mockSuccessfulBranchesResponse(response);
-
-        Call mockedCall = mock(Call.class);
-        when(mockedCall.execute()).thenReturn(response);
-        when(httpClient.newCall(any(Request.class))).thenReturn(mockedCall);
-        doAnswer(invocationOnMock -> {
-            Thread.currentThread().interrupt();
-            return null;
-        }).when(mockedCall).enqueue(any());
-
-        String userName = "testUser";
-
-        assertThrows(InternalErrorException.class,
-                () -> githubClient.fetchBranches(userName, List.of("Repo1", "Repo2")));
+        StepVerifier.create(result)
+                .verifyError(NotFoundException.class);
     }
 }

@@ -1,6 +1,7 @@
 package com.bezruk.github.explorer.service;
 
 import com.bezruk.github.explorer.client.GithubClient;
+import com.bezruk.github.explorer.exception.BadRequestException;
 import com.bezruk.github.explorer.model.Branch;
 import com.bezruk.github.explorer.model.Commit;
 import com.bezruk.github.explorer.model.Repository;
@@ -9,51 +10,72 @@ import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+import reactor.test.StepVerifier;
 
-import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.when;
 
 public class RepositoryServiceTest {
 
     @Mock
-    GithubClient githubClient;
-
-    @Mock
-    BranchService branchService;
+    private GithubClient githubClient;
 
     @InjectMocks
-    RepositoryService repositoryService;
+    private RepositoryService repositoryService;
 
     @BeforeEach
-    void setUp() {
-        MockitoAnnotations.openMocks(this);
+    public void setUp() {
+        MockitoAnnotations.initMocks(this);
     }
 
     @Test
-    void testGetRepositories() {
+    public void whenUserNameIsPresentShouldSuccessfullyLoadRepositoriesWithBranches() {
         String userName = "testUser";
-        Repository repository = new Repository();
-        repository.setName("test");
-        List<Repository> mockRepositories = Collections.singletonList(repository);
 
-        when(githubClient.fetchRepositories(userName)).thenReturn(mockRepositories);
+        Repository repo1 = new Repository();
+        repo1.setName("repo1");
+        repo1.setFork(false);
 
-        Branch branch = new Branch("branch1", new Commit("sha1"));
-        Branch branch2 = new Branch("branch2", new Commit("sha2"));
-        Branch branch3 = new Branch("branch3", new Commit("sha3"));
-        Branch branch4 = new Branch("branch4", new Commit("sha4"));
-        List<Branch> branchList1 = List.of(branch, branch2);
-        List<Branch> branchList2 = List.of(branch3, branch4);
+        Repository repo2 = new Repository();
+        repo2.setName("repo2");
+        repo2.setFork(false);
 
-        when(branchService.getBranches(userName, List.of("test")))
-                .thenReturn(Map.of("repo1", branchList1, "repo2", branchList2));
+        Branch branch = new Branch("master", new Commit(""));
+        Branch branch1 = new Branch("feature", new Commit(""));
+        Branch branch2 = new Branch("feature", new Commit(""));
 
-        List<Repository> result = repositoryService.getRepositories(userName);
 
-        assertEquals(mockRepositories, result);
+        repo1.withBranches(List.of(branch, branch1));
+        repo2.withBranches(List.of(branch2));
+
+        when(githubClient.fetchRepositories(userName)).thenReturn(Mono.just(List.of(repo1, repo2)));
+        when(githubClient.fetchBranchesFor(repo1)).thenReturn(Mono.just(repo1));
+        when(githubClient.fetchBranchesFor(repo2)).thenReturn(Mono.just(repo2));
+
+        Flux<Repository> result = repositoryService.getRepositories(userName);
+
+        StepVerifier.create(result)
+                .expectNextMatches(repo -> repo.getName().equals("repo1") && !repo.getFork() && repo.getBranches().size() == 2)
+                .expectNextMatches(repo -> repo.getName().equals("repo2") && !repo.getFork() && repo.getBranches().size() == 1)
+                .expectComplete()
+                .verify();
+    }
+
+    @Test
+    public void shouldThrowBadRequestExceptionWhenUserNameIsEmpty() {
+        String userName = "";
+
+        assertThrows(BadRequestException.class, () -> repositoryService.getRepositories(userName));
+    }
+
+    @Test
+    public void shouldThrowBadRequestExceptionWhenUserNameIsNull() {
+        String userName = null;
+
+        assertThrows(BadRequestException.class, () -> repositoryService.getRepositories(userName));
     }
 }

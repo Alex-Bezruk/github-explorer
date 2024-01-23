@@ -1,15 +1,25 @@
-FROM registry.access.redhat.com/ubi8/openjdk-17:1.18
+# Use an official OpenJDK runtime as a parent image
+FROM openjdk:17-alpine
 
-ENV LANGUAGE='en_US:en'
+# Set the working directory in the container
+WORKDIR /app
 
-COPY --chown=185 build/quarkus-app/lib/ /deployments/lib/
-COPY --chown=185 build/quarkus-app/*.jar /deployments/
-COPY --chown=185 build/quarkus-app/app/ /deployments/app/
-COPY --chown=185 build/quarkus-app/quarkus/ /deployments/quarkus/
+# Copy the packaged JAR file into the container at the specified working directory
+COPY gradle/ /app/gradle/
+COPY build.gradle /app/
+COPY settings.gradle /app/
 
+# Download and install Gradle
+RUN ./gradle/wrapper/gradle-wrapper.jar
+
+# Copy the application source code
+COPY src /app/src
+
+# Build the application using Gradle
+RUN ./gradlew build
+
+# Expose the port that your Spring Boot application will run on
 EXPOSE 8080
-USER 185
-ENV JAVA_OPTS_APPEND="-Dquarkus.http.host=0.0.0.0 -Djava.util.logging.manager=org.jboss.logmanager.LogManager"
-ENV JAVA_APP_JAR="/deployments/quarkus-run.jar"
 
-ENTRYPOINT [ "/opt/jboss/container/java/run/run-java.sh" ]
+# Specify the command to run on container start
+CMD ["java", "-jar", "build/libs/github-explorer.jar"]

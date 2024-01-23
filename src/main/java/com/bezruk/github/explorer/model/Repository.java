@@ -13,4 +13,10 @@ public class Repository {
     private String name;
     private Owner owner;
     private List<Branch> branches;
+    private Boolean fork;
+
+    public Repository withBranches(List<Branch> branches) {
+        this.branches = branches;
+        return this;
+    }
 }
