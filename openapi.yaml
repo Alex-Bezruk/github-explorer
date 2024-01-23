@@ -17,7 +17,11 @@ paths:
           example: john_doe
       responses:
         "200":
-          description: OK
+          description: Successful response
+          content:
+            application/json:
+              example:
+                - $ref: '#/components/schemas/GitHubRepository'
         "400":
           description: Bad Request
           content:
@@ -39,3 +43,55 @@ paths:
               example:
                 message: "GithubAPI responded with status 404. Original Message: Not Found."
                 status: 404
+
+
+components:
+  schemas:
+    GitHubRepository:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 741911868
+        name:
+          type: string
+          example: github-explorer
+        owner:
+          $ref: '#/components/schemas/GitHubUser'
+        branches:
+          type: array
+          items:
+            $ref: '#/components/schemas/Branch'
+        fork:
+          type: boolean
+          example: false
+
+    GitHubUser:
+      type: object
+      properties:
+        login:
+          type: string
+          example: Alex-Bezruk
+        id:
+          type: integer
+          example: 30620490
+        url:
+          type: string
+          format: uri
+          example: https://api.github.com/users/Alex-Bezruk
+
+    Branch:
+      type: object
+      properties:
+        name:
+          type: string
+          example: master
+        commit:
+          $ref: '#/components/schemas/Commit'
+
+    Commit:
+      type: object
+      properties:
+        sha:
+          type: string
+          example: 5a5be8a021a14e6f51ca879d9e935c296156c826
