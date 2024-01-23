@@ -21,7 +21,6 @@ public class GithubClient {
 
     private final WebClient webClient;
 
-
     public GithubClient(WebClient.Builder webClientBuilder, @Value("${github.api.url}") String githubHost) {
         this.webClient = webClientBuilder.baseUrl(githubHost).build();
     }
