@@ -1,4 +1,4 @@
-package com.bezruk.githubexplorer;
+package com.bezruk.github.explorer;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;

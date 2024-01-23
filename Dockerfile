@@ -1,25 +1,16 @@
-# Use an official OpenJDK runtime as a parent image
-FROM openjdk:17-alpine
-
-# Set the working directory in the container
+# Stage 1: Build the application
+FROM openjdk:17-alpine AS build
 WORKDIR /app
-
-# Copy the packaged JAR file into the container at the specified working directory
 COPY gradle/ /app/gradle/
-COPY build.gradle /app/
-COPY settings.gradle /app/
-
-# Download and install Gradle
-RUN ./gradle/wrapper/gradle-wrapper.jar
-
-# Copy the application source code
+COPY build.gradle settings.gradle /app/
 COPY src /app/src
+COPY gradlew /app/
+RUN chmod +x /app/gradlew && /app/gradlew --version
+RUN /app/gradlew build
 
-# Build the application using Gradle
-RUN ./gradlew build
-
-# Expose the port that your Spring Boot application will run on
+# Stage 2: Create a smaller image for runtime
+FROM openjdk:17-alpine
+WORKDIR /app
+COPY --from=build /app/build/libs/github-explorer-1.0.0.jar /app/
 EXPOSE 8080
-
-# Specify the command to run on container start
-CMD ["java", "-jar", "build/libs/github-explorer.jar"]
+CMD ["java", "-jar", "github-explorer-1.0.0.jar"]
